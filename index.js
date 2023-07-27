@@ -1,6 +1,9 @@
-const { Client, GuildMember, IntentsBitField } = require("discord.js");
+const { Client, GuildMember, IntentsBitField, Collection } = require("discord.js");
 const { Player, QueryType } = require("discord-player");
 const config = require("./config.json");
+
+const fs = require('fs');
+const path = require('path');
 
 const client = new Client({
     intents: [IntentsBitField.Flags.GuildVoiceStates, IntentsBitField.Flags.GuildMessages, IntentsBitField.Flags.Guilds, IntentsBitField.Flags.MessageContent]
@@ -8,6 +11,30 @@ const client = new Client({
 client.login(config.token);
 
 client.once('ready', () => {
+
+    // List of all commands
+    const commands = [];
+    client.commands = new Collection();
+
+    const commandsPath = path.join(__dirname, "commands");
+    const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
+    for(const file of commandFiles)
+    {
+        if (file.endsWith('testcm.js') || file.endsWith('play.js')) {
+        
+        // extracting commands from the files
+        const filePath = path.join(commandsPath, file);
+        const command = require(filePath);
+
+        // store commands collection in client
+        client.commands.set(command.data?.name, command);
+
+        // commands object to push to rest
+        commands.push(command.data?.toJSON());
+        
+        }
+    }
+
     console.log('Ready!');
 });
    
@@ -15,6 +42,8 @@ client.on("error", console.error);
 client.on("warn", console.warn);
 
 const player = new Player(client);
+player.extractors.loadDefault(); // loads all default extractors (yt, spotify, soundcloud, etc.)
+
 
 // error handlers
 player.on("error", (queue, error) => {
@@ -24,9 +53,10 @@ player.on("connectionError", (queue, error) => {
     console.log(`[${queue.guild.name}] Error emitted from the connection: ${error.message}`);
 });
 
-// player functions
-player.on("trackStart", (queue, track) => {
+// player functions -- doesnt work rn
+player.on("playerStart", (queue, track) => {
     queue.metadata.send(`🎶 | Started playing: **${track.title}** in **${queue.connection.channel.name}**!`);
+    console.log("player event activated!")
 });
 
 player.on("trackAdd", (queue, track) => {
@@ -53,35 +83,44 @@ client.on("messageCreate", async (message) => {
     if (message.content === "!bruh" && message.author.id === client.application?.owner?.id) {
         await message.reply("jesse wut duuu heeeeee");
     }
+
     if (message.content === "!deploy" && message.author.id === client.application?.owner?.id) {
 
-        await message.guild.commands.set([
-            {
-                name: "play",
-                description: "Plays a song from youtube",
-                options: [
-                    {
-                        name: "query",
-                        type: "STRING",
-                        description: "The song you want to play",
-                        required: true
-                    }
-                ]
-            },
-            {
-                name: "skip",
-                description: "Skip to the next song"
-            },
-            {
-                name: "queue",
-                description: "See the queue"
-            },
-            {
-                name: "stop",
-                description: "Stop the player"
-            },
-        ]);
+        //console.log(commands);
+        // set guild commands
+        await message.guild.commands.set(commands);
 
-    await message.reply("Deployed!");
-}
+        // set global commands
+        //await client.application.commands.set(slashcommands);
+
+        await message.reply("Deployed!");
+    }
+});
+
+// executing slash commands
+client.on("interactionCreate", async interaction => {
+    if(!interaction.isCommand()) return;
+    const command = client.commands.get(interaction.commandName);
+    if(!command) return;
+
+    //console.log(command);
+    if (command.data.forVC) {
+        if (!(interaction.member instanceof GuildMember) || !interaction.member.voice.channel) {
+            return void interaction.reply({ content: "You are not in a voice channel!", ephemeral: true });
+        }
+
+        if (client.voice.channelId && interaction.member.voice.channelId !== client.voice.channelId) {
+            return void interaction.reply({ content: "You are not in my voice channel!", ephemeral: true });
+        }
+    }
+
+    try
+    {
+        await command.execute({player, interaction});
+    }
+    catch(error)
+    {
+        console.error(error);
+        await interaction.reply({content: "There was an error executing this command 💀💀💀"});
+    }
 });
