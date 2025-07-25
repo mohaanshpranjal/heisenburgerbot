@@ -4,6 +4,7 @@ const config = require("./config.json");
 
 const fs = require('fs');
 const path = require('path');
+const commands = [];
 
 const client = new Client({
     intents: [IntentsBitField.Flags.GuildVoiceStates, IntentsBitField.Flags.GuildMessages, IntentsBitField.Flags.Guilds, IntentsBitField.Flags.MessageContent]
@@ -13,7 +14,7 @@ client.login(config.token);
 client.once('ready', () => {
 
     // List of all commands
-    const commands = [];
+    
     client.commands = new Collection();
 
     const commandsPath = path.join(__dirname, "commands");
@@ -55,7 +56,7 @@ player.on("connectionError", (queue, error) => {
 
 // player functions -- doesnt work rn
 player.on("playerStart", (queue, track) => {
-    queue.metadata.send(`🎶 | Started playing: **${track.title}** in **${queue.connection.channel.name}**!`);
+    //queue.metadata.send(`🎶 | Started playing: **${track.title}** in **${queue.connection.channel.name}**!`);
     console.log("player event activated!")
 });
 
@@ -81,7 +82,10 @@ client.on("messageCreate", async (message) => {
     if (message.author.bot || !message.guild) return;
     if (!client.application?.owner) await client.application?.fetch();
     if (message.content === "!bruh" && message.author.id === client.application?.owner?.id) {
-        await message.reply("jesse wut duuu heeeeee");
+        message.channel.sendTyping().then(() => {
+            message.channel.send("jesse wut duuu heeeeee")
+        });
+        
     }
 
     if (message.content === "!deploy" && message.author.id === client.application?.owner?.id) {
@@ -93,7 +97,10 @@ client.on("messageCreate", async (message) => {
         // set global commands
         //await client.application.commands.set(slashcommands);
 
-        await message.reply("Deployed!");
+        message.channel.sendTyping().then(() => {
+            message.channel.send("Deployed!")
+        });
+
     }
 });
 

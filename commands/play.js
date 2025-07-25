@@ -16,6 +16,7 @@ module.exports = {
         const query = interaction.options.get("url").value;
         try {
             const { track } = await player.play(interaction.member.voice.channelId, query);
+            console.log(track);
             await interaction.editReply(`🎶 | Started playing: ${track.author} - ${track.title}`);
         } catch(e) {
             console.log(`Failed to play error oh no:\n\n${e}`);
