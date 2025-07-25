@@ -43,7 +43,7 @@ client.on("error", console.error);
 client.on("warn", console.warn);
 
 const player = new Player(client);
-player.extractors.loadDefault(); // loads all default extractors (yt, spotify, soundcloud, etc.)
+//player.extractors.loadMulti(); // loads all default extractors (yt, spotify, soundcloud, etc.)
 
 
 // error handlers
