@@ -1,6 +1,7 @@
 const { Client, GuildMember, IntentsBitField, Collection } = require("discord.js");
-const { Player, QueryType } = require("discord-player");
-const config = require("./config.json");
+const { Player } = require("discord-player");
+const { YoutubeiExtractor } = require("discord-player-youtubei");
+const { BOT_TOKEN } = require("./config");
 
 const fs = require('fs');
 const path = require('path');
@@ -9,7 +10,7 @@ const commands = [];
 const client = new Client({
     intents: [IntentsBitField.Flags.GuildVoiceStates, IntentsBitField.Flags.GuildMessages, IntentsBitField.Flags.Guilds, IntentsBitField.Flags.MessageContent]
 });
-client.login(config.token);
+client.login(BOT_TOKEN);
 
 client.once('ready', () => {
 
@@ -44,6 +45,7 @@ client.on("warn", console.warn);
 
 const player = new Player(client);
 //player.extractors.loadMulti(); // loads all default extractors (yt, spotify, soundcloud, etc.)
+player.extractors.register(YoutubeiExtractor, {})
 
 
 // error handlers
@@ -123,7 +125,9 @@ client.on("interactionCreate", async interaction => {
 
     try
     {
-        await command.execute({player, interaction});
+        //await command.execute({player, interaction});
+        // execute the command
+        await player.context.provide({ guild: interaction.guild }, () => command.execute(interaction));
     }
     catch(error)
     {

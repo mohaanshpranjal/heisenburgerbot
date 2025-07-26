@@ -7,7 +7,7 @@ module.exports = {
 		.setName("testcm")
 		.setDescription("test command fr"),
 
-	execute: async ({ client, interaction }) => {
+	execute: async (interaction) => {
 
         // Make sure the user is inside a voice channel
 		return interaction.reply("I am the one who tests.");
