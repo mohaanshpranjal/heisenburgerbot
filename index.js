@@ -1,11 +1,13 @@
 const { Client, GuildMember, IntentsBitField, Collection } = require("discord.js");
 const { Player } = require("discord-player");
+const { SpotifyExtractor } = require("@discord-player/extractor");
 const { YoutubeiExtractor } = require("discord-player-youtubei");
 const { BOT_TOKEN } = require("./config");
+const commands = require("./commands");
 
 const fs = require('fs');
 const path = require('path');
-const commands = [];
+const commandlist = [];
 
 const client = new Client({
     intents: [IntentsBitField.Flags.GuildVoiceStates, IntentsBitField.Flags.GuildMessages, IntentsBitField.Flags.Guilds, IntentsBitField.Flags.MessageContent]
@@ -15,26 +17,13 @@ client.login(BOT_TOKEN);
 client.once('ready', () => {
 
     // List of all commands
-    
     client.commands = new Collection();
 
-    const commandsPath = path.join(__dirname, "commands");
-    const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
-    for(const file of commandFiles)
-    {
-        if (file.endsWith('testcm.js') || file.endsWith('play.js')) {
-        
-        // extracting commands from the files
-        const filePath = path.join(commandsPath, file);
-        const command = require(filePath);
-
+    for(const command of Object.values(commands)) {
         // store commands collection in client
         client.commands.set(command.data?.name, command);
-
-        // commands object to push to rest
-        commands.push(command.data?.toJSON());
-        
-        }
+        // push to list for setting guild commands later
+        commandlist.push(command.data?.toJSON());
     }
 
     console.log('Ready!');
@@ -45,7 +34,8 @@ client.on("warn", console.warn);
 
 const player = new Player(client);
 //player.extractors.loadMulti(); // loads all default extractors (yt, spotify, soundcloud, etc.)
-player.extractors.register(YoutubeiExtractor, {})
+//player.extractors.register(SpotifyExtractor, {});
+player.extractors.register(YoutubeiExtractor, {});
 
 
 // error handlers
@@ -55,8 +45,12 @@ player.on("error", (queue, error) => {
 player.on("connectionError", (queue, error) => {
     console.log(`[${queue.guild.name}] Error emitted from the connection: ${error.message}`);
 });
+player.on("playerError", (queue, error) => {
+    console.log(`[${queue.guild.name}] Error emitted from the queue: ${error.message}`);
+});
 
 // player functions -- doesnt work rn
+
 player.on("playerStart", (queue, track) => {
     //queue.metadata.send(`🎶 | Started playing: **${track.title}** in **${queue.connection.channel.name}**!`);
     console.log("player event activated!")
@@ -78,6 +72,7 @@ player.on("queueEnd", (queue) => {
     queue.metadata.send("✅ | Queue finished!");
 });
 
+
 // slash commands
 client.on("messageCreate", async (message) => {
 
@@ -92,9 +87,8 @@ client.on("messageCreate", async (message) => {
 
     if (message.content === "!deploy" && message.author.id === client.application?.owner?.id) {
 
-        //console.log(commands);
         // set guild commands
-        await message.guild.commands.set(commands);
+        await message.guild.commands.set(commandlist);
 
         // set global commands
         //await client.application.commands.set(slashcommands);
@@ -125,8 +119,6 @@ client.on("interactionCreate", async interaction => {
 
     try
     {
-        //await command.execute({player, interaction});
-        // execute the command
         await player.context.provide({ guild: interaction.guild }, () => command.execute(interaction));
     }
     catch(error)
