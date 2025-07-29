@@ -1,12 +1,13 @@
 const { Client, GuildMember, IntentsBitField, Collection } = require("discord.js");
-const { Player } = require("discord-player");
+const { Player, GuildQueueEvent } = require("discord-player");
 const { SpotifyExtractor } = require("@discord-player/extractor");
 const { YoutubeiExtractor } = require("discord-player-youtubei");
 const { BOT_TOKEN } = require("./config");
-const commands = require("./commands");
-
 const fs = require('fs');
 const path = require('path');
+
+const debugMode = false;
+
 const commandlist = [];
 
 const client = new Client({
@@ -19,11 +20,20 @@ client.once('ready', () => {
     // List of all commands
     client.commands = new Collection();
 
-    for(const command of Object.values(commands)) {
-        // store commands collection in client
-        client.commands.set(command.data?.name, command);
-        // push to list for setting guild commands later
-        commandlist.push(command.data?.toJSON());
+    const commandsPath = path.join(__dirname, "commands");
+    const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
+    for(const file of commandFiles)
+    {
+        // extracting commands from the files
+        const filePath = path.join(commandsPath, file);
+        const command = require(filePath);
+
+        if ('data' in command && 'execute' in command) {
+            client.commands.set(command.data.name, command);
+            commandlist.push(command.data?.toJSON());
+        } else {
+            console.log(`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`);
+        }
     }
 
     console.log('Ready!');
@@ -32,8 +42,8 @@ client.once('ready', () => {
 client.on("error", console.error);
 client.on("warn", console.warn);
 
-const player = new Player(client);
-//player.extractors.loadMulti(); // loads all default extractors (yt, spotify, soundcloud, etc.)
+const player = new Player(client, { skipFFmpeg: false });
+//player.extractors.loadMulti(); // loads all default extractors
 //player.extractors.register(SpotifyExtractor, {});
 player.extractors.register(YoutubeiExtractor, {});
 
@@ -71,6 +81,28 @@ player.on("channelEmpty", (queue) => {
 player.on("queueEnd", (queue) => {
     queue.metadata.send("✅ | Queue finished!");
 });
+
+
+if(debugMode){
+    player.events.on(GuildQueueEvent.PlayerPause, (queue, track) => {console.log("\n player pause!\n")})
+    player.events.on(GuildQueueEvent.PlayerResume, (queue, track) => {console.log("\n player resumed!\n")})
+    player.events.on("playerStart", (queue, track) => {console.log("\n player start!\n")})
+    player.events.on("disconnect", (queue) => {console.log("\n disconnected!\n")})
+    player.events.on("emptyQueue", (queue) => {console.log("\n empty queue!\n")})
+    player.events.on("playerError", (queue) => {console.log("\n player error!\n")})
+    player.events.on("error", (queue) => {console.log("\n error!\n")})
+    
+    player.on('debug', async (message) => {
+    // Emitted when the player sends debug info
+    // Useful for seeing what dependencies, extractors, etc are loaded
+    console.log(`General player debug event: ${message}`);
+    });
+    player.events.on('debug', async (queue, message) => {
+    // Emitted when the player queue sends debug info
+    // Useful for seeing what state the current queue is at
+    console.log(`Player debug event: ${message}`);
+});
+}
 
 
 // slash commands
