@@ -1,14 +1,10 @@
 const { Client, GuildMember, IntentsBitField, Collection } = require("discord.js");
 const { Player, GuildQueueEvent } = require("discord-player");
-const { SpotifyExtractor } = require("@discord-player/extractor");
 const { YoutubeiExtractor } = require("discord-player-youtubei");
 const { BOT_TOKEN } = require("./config");
-const fs = require('fs');
-const path = require('path');
+const { parseCommands, deployCommands } = require("./deploy");
 
 const debugMode = false;
-
-const commandlist = [];
 
 const client = new Client({
     intents: [IntentsBitField.Flags.GuildVoiceStates, IntentsBitField.Flags.GuildMessages, IntentsBitField.Flags.Guilds, IntentsBitField.Flags.MessageContent]
@@ -16,35 +12,14 @@ const client = new Client({
 client.login(BOT_TOKEN);
 
 client.once('ready', () => {
-
-    // List of all commands
-    client.commands = new Collection();
-
-    const commandsPath = path.join(__dirname, "commands");
-    const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
-    for(const file of commandFiles)
-    {
-        // extracting commands from the files
-        const filePath = path.join(commandsPath, file);
-        const command = require(filePath);
-
-        if ('data' in command && 'execute' in command) {
-            client.commands.set(command.data.name, command);
-            commandlist.push(command.data?.toJSON());
-        } else {
-            console.log(`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`);
-        }
-    }
-
-    console.log('Ready!');
+    client.commands = parseCommands();
+    console.log('Ready! Hello (again), World ::)');
 });
    
 client.on("error", console.error);
 client.on("warn", console.warn);
 
 const player = new Player(client, { skipFFmpeg: false });
-//player.extractors.loadMulti(); // loads all default extractors
-//player.extractors.register(SpotifyExtractor, {});
 player.extractors.register(YoutubeiExtractor, {});
 
 
@@ -105,7 +80,7 @@ if(debugMode){
 }
 
 
-// slash commands
+// prefix commands - only for testing/deploymment
 client.on("messageCreate", async (message) => {
 
     if (message.author.bot || !message.guild) return;
@@ -118,17 +93,12 @@ client.on("messageCreate", async (message) => {
     }
 
     if (message.content === "!deploy" && message.author.id === client.application?.owner?.id) {
-
-        // set guild commands
-        await message.guild.commands.set(commandlist);
-
-        // set global commands
-        //await client.application.commands.set(slashcommands);
+        const deployGlobal = true;
+        await deployCommands(client, message, deployGlobal);
 
         message.channel.sendTyping().then(() => {
             message.channel.send("Deployed!")
         });
-
     }
 });
 
@@ -149,12 +119,10 @@ client.on("interactionCreate", async interaction => {
         }
     }
 
-    try
-    {
+    try {
         await player.context.provide({ guild: interaction.guild }, () => command.execute(interaction));
     }
-    catch(error)
-    {
+    catch(error) {
         console.error(error);
         await interaction.reply({content: "There was an error executing this command 💀💀💀"});
     }
