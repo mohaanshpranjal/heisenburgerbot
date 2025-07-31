@@ -8,4 +8,4 @@ module.exports = {
 }
 
 // some emojis for use -->   ⏭️  🔁  ▶️  🔀  ⏯️  ⏸️  ⏹️
-// 😭 🎶 ✅ ❌ 💀 🤨
+// 😭 🎶 ✅ ❌ 💀 🤨 🗑️ ❔

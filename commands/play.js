@@ -9,7 +9,7 @@ const copies = require("../copies")
 
 const playCopies = {
     name: "play",
-    description: "Play a song/add to queue",
+    description: "▶️ Play a song/add to queue",
     urlOption: "url",
     urlOptionDesc: "url (youtube) of the track to play",
     response: (title) => `✅ | Added to queue: ${title}`

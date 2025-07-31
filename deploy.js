@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const { Collection } = require("discord.js");
 
-function parseCommands() {
+function parseCommands(includeTest = false) {
     commands = new Collection();
 
     const commandsPath = path.join(__dirname, "commands");
@@ -14,6 +14,7 @@ function parseCommands() {
         const command = require(filePath);
 
         if ('data' in command && 'execute' in command) {
+            if (!includeTest && command.data.testCommand) {continue;}
             commands.set(command.data.name, command);
         } else {
             console.log(`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`);

@@ -8,7 +8,7 @@ const copies = require("../copies")
 
 const clearCopies = {
     name: "clear",
-    description: "Clear the queue",
+    description: "🗑️ Clear the queue",
     response: "Cleared the current queue!"
 }
 

@@ -12,7 +12,7 @@ const client = new Client({
 client.login(BOT_TOKEN);
 
 client.once('ready', () => {
-    client.commands = parseCommands();
+    client.commands = parseCommands(debugMode);
     console.log('Ready! Hello (again), World ::)');
 });
    
@@ -93,8 +93,7 @@ client.on("messageCreate", async (message) => {
     }
 
     if (message.content === "!deploy" && message.author.id === client.application?.owner?.id) {
-        const deployGlobal = true;
-        await deployCommands(client, message, deployGlobal);
+        await deployCommands(client, message, !debugMode); // debug mode only deploys in current guild
 
         message.channel.sendTyping().then(() => {
             message.channel.send("Deployed!")
@@ -111,11 +110,11 @@ client.on("interactionCreate", async interaction => {
     //console.log(command);
     if (command.data.forVC) {
         if (!(interaction.member instanceof GuildMember) || !interaction.member.voice.channel) {
-            return void interaction.reply({ content: "You are not in a voice channel!", ephemeral: true });
+            return void interaction.reply({ content: "You are not in a voice channel! 💀💀💀", ephemeral: true });
         }
 
         if (client.voice.channelId && interaction.member.voice.channelId !== client.voice.channelId) {
-            return void interaction.reply({ content: "You are not in my voice channel!", ephemeral: true });
+            return void interaction.reply({ content: "You are not in my voice channel! 💀💀💀", ephemeral: true });
         }
     }
 

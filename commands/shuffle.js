@@ -8,7 +8,7 @@ const copies = require("../copies")
 
 const shuffleCopies = {
     name: "shuffle",
-    description: "🔀 | Shuffle the queue",
+    description: "🔀 Shuffle the queue",
     responseOne: "There's not enough tracks to shuffle 🤨",
     responseShuffled: (size) => `🔀 | Shuffled ${size} tracks!`
 }
